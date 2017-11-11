@@ -6,7 +6,9 @@
   "directories": {
     "test": "test"
   },
-  "dependencies": {},
+  "dependencies": {
+    "validator": "^9.1.1"
+  },
   "devDependencies": {},
   "scripts": {
     "start": "polymer serve",

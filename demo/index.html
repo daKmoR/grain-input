@@ -5,8 +5,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
   <title>grain-input Demo</title>
-
-  <script type="module" src="../grain-input.js"></script>
+  <script type="text/javascript" src="../../validator/validator.min.js"></script>
 
   <custom-style>
     <style include="demo-pages-shared-styles"></style>
@@ -17,7 +16,25 @@
   <h1>Example page of the grain-input</h1>
 
   <h2>An basic example</h2>
-  <grain-input></grain-input>
+  <div id="container"></div>
+
+  <script type="module">
+    import { html, render } from '../../lit-html/lib/lit-extended.js';
+    import '../grain-input.js';
+
+    let required = function(value) {
+      return typeof value === 'string' && value !== '';
+    }
+
+    let nameInput = document.querySelector('#nameinput');
+
+    render(html`
+      <grain-input id="nameinput" validators=${[required, [validator.isLength, {min: 5, max: 10}]]}>
+        <input id="input" type="text" />
+      </grain-input>
+      <button on-click="${(e) => { document.getElementById('nameinput').validate(); }}">validate</button>
+    `, document.getElementById('container'));
+  </script>
 
 </body>
 </html>

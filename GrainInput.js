@@ -1,61 +1,65 @@
 import GrainLitElement, { html } from '../grain-lit-element/GrainLitElement.js';
 
-let minLength = function(value, minLength) {
-  console.log(value);
-  let stringValue = String(value);
-}
-
-
 export default class GrainInput extends GrainLitElement(HTMLElement) {
 
   static get properties() {
     return {
-      value: {
-        type: String,
-        value: 'test',
-        reflectToAttribute: 'value',
-        observer: '_valueChanged'
+      validators: {
+        type: Array
+      },
+      errors: {
+        type: Array,
+        value: []
       }
     };
   }
 
-  constructor() {
-    super();
-    this.bla = ['a', 'b'];
+  get value() {
+    return this.$_.input.value;
   }
 
-  _valueChanged(a, b) {
-    // console.log(a);
-    // console.log(b);
+  connectedCallback() {
+    super.connectedCallback();
+    this.$_ = {};
+    this.$_.input = this.querySelector('#input');
   }
 
-  required(value) {
-    return typeof value !== 'undefined';
-  }
-
-  validate(a) {
-    let validators = this.$.meh.validators;
-    console.log('go', validators);
+  /**
+   * a Validator can be
+   * - function
+   *     e.g. required, isEmail, isEmpty
+   * - array
+   *     e.g. [isLength, {min: 10}], [isLength, {min: 5, max: 10}], [contains, 'me']
+   */
+  validate() {
+    let validators = this.validators;
+    let errors = [];
+    let value = this.value;
     
     for (let i=0; i < validators.length; i++) {
-      let validator = validators[i];
-      if (Array.isArray(validator)) {
-        console.log(validator[1]);
-      }
-      if (typeof validator === 'function') {
-        console.log(validator(this.value));
+      let validatorArray = Array.isArray(validators[i]) ? validators[i] : [validators[i]];
+      let validatorFunction = validatorArray[0];
+      let validatorParams = validatorArray[1];
+
+      if (typeof validatorFunction === 'function') {
+        if (!validatorFunction(value, validatorParams)) {
+          errors.push({
+            name: validatorFunction.name,
+            value,
+            params: validatorParams
+          });
+        }
       }
     }
+    this.errors = errors;
   }
 
   render() {
     return html`
-      <div id="meh" validators=${[this.required, [minLength, 10] ]}> meh </div>
-      <button on-click="${this.validate.bind(this)}">validate</button>
+      <slot></slot>
+      <ul>
+        ${this.errors.map((error) => { return html`<li>${error.name}</li>`; })}
+      </ul>
     `;
-      // <div id="meh2" validators=${this.bla}> meh2 </div>
-      // <input type="text" validators="minLength(this.value, 10)" valid="${this.validate(this.value)}" value$="${this.value}" />
-    }
+  }
 }
-
-
