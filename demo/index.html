@@ -26,17 +26,18 @@
       namespace: 'translations'
     });
 
-    let required = function(value) {
-      return typeof value === 'string' && value !== '';
-    }
-
-    let nameInput = document.querySelector('#nameinput');
-
     render(html`
-      <grain-input id="nameinput" field-name="First Name" validators=${[required, [validator.isLength, {min: 5, max: 10}]]}>
-        <input id="input" type="text" name="first-name" />
+      <grain-input field-name="First Name" validators=${['optional', [validator.isLength, {min: 5, max: 10}]]}>
+        <label>First Name</label>
+        <input type="text" name="first-name" />
+        <p>(option, isLength 5-10)</p>
       </grain-input>
-      <button on-click="${(e) => { document.getElementById('nameinput').validate(); }}">validate</button>
+      <grain-input validators=${['required', [validator.isLength, {min: 5, max: 10}]]}>
+        <label>Last Name</label>
+        <input type="text" name="last-name" />
+        <p>(required, isLength 5-10)</p>
+      </grain-input>
+      <button on-click="${(e) => { document.querySelectorAll('grain-input').forEach(el => el.validate()); }}">validate</button>
     `, document.getElementById('container'));
   </script>
 

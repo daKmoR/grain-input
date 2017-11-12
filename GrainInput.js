@@ -20,21 +20,32 @@ export default class GrainInput extends GrainTranslateMixin(GrainLitElement(HTML
   }
 
   get value() {
-    return this.$_.input.value;
+    return this.nativeInput.value;
   }
 
   get name() {
-    return this.$_.input.name;
+    return this.nativeInput.name;
   }
 
   getFieldName() {
-    return this.fieldName ? this.fieldName : this.name;
+    if (this.fieldName) {
+      return this.fieldName;
+    }
+    if (this.nativeLabel) {
+      return this.nativeLabel.innerText;
+    }
+    return this.name;
   }
 
   connectedCallback() {
     super.connectedCallback();
-    this.$_ = {};
-    this.$_.input = this.querySelector('#input');
+    this.nativeInput = this.querySelector('input');
+    this.nativeLabel = this.querySelector('label');
+    if (!this.nativeInput.hasAttribute('id')) {
+      let id = 'id' + Math.random().toString(36).substr(2, 10);
+      this.nativeInput.setAttribute('id', id);
+      this.nativeLabel.setAttribute('for', id);
+    }
   }
 
   getErrorTranslationsKeys(data) {
@@ -44,7 +55,7 @@ export default class GrainInput extends GrainTranslateMixin(GrainLitElement(HTML
   /**
    * a Validator can be
    * - special
-   *     required, optional
+   *     e.g. 'required', 'optional'
    * - function
    *     e.g. required, isEmail, isEmpty
    * - array
@@ -54,14 +65,24 @@ export default class GrainInput extends GrainTranslateMixin(GrainLitElement(HTML
     let validators = this.validators;
     let errors = [];
     let value = this.value;
+    let optional = false;
+    let required = function(value) {
+      return (typeof value === 'string' && value !== '') || (typeof value !== 'string' && typeof value !== 'undefined');
+    }
     
     for (let i=0; i < validators.length; i++) {
+      if (typeof validators[i] === 'string') {
+        optional = validators[i] === 'optional';
+        if (validators[i] === 'required') {
+          validators[i] = required;
+        }
+      }
       let validatorArray = Array.isArray(validators[i]) ? validators[i] : [validators[i]];
       let validatorFunction = validatorArray[0];
       let validatorParams = validatorArray[1];
 
       if (typeof validatorFunction === 'function') {
-        if (!validatorFunction(value, validatorParams)) {
+        if (!validatorFunction(value, validatorParams) && !(optional === true && typeof value === 'string' && value === '')) {
           let data = Object.assign({}, validatorParams, {
             validator: validatorFunction.name,
             fieldName: this.getFieldName(),
