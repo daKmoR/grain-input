@@ -1,7 +1,7 @@
 import GrainLitElement, { html } from '../grain-lit-element/GrainLitElement.js';
 import GrainTranslateMixin from '../grain-translate/GrainTranslateMixin.js';
 
-export default class GrainInput extends GrainTranslateMixin(GrainLitElement(HTMLElement)) {
+export default class GrainInput extends GrainTranslateMixin(GrainLitElement) {
 
   static get properties() {
     return {
