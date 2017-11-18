@@ -1,5 +1,4 @@
 import GrainLitElement, { html } from '../grain-lit-element/GrainLitElement.js';
-import { directive } from '../lit-html/lit-html.js';
 import GrainTranslateMixin from '../grain-translate/GrainTranslateMixin.js';
 
 export default class GrainInput extends GrainTranslateMixin(GrainLitElement) {
