@@ -7,6 +7,8 @@
     "test": "test"
   },
   "dependencies": {
+    "grain-lit-element": "github:daKmoR/grain-lit-element",
+    "grain-translate": "github:daKmoR/grain-translate",
     "validator": "^9.1.1"
   },
   "devDependencies": {},
