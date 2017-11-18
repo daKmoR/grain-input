@@ -1,4 +1,5 @@
 import GrainLitElement, { html } from '../grain-lit-element/GrainLitElement.js';
+import { directive } from '../lit-html/lit-html.js';
 import GrainTranslateMixin from '../grain-translate/GrainTranslateMixin.js';
 
 export default class GrainInput extends GrainTranslateMixin(GrainLitElement) {
@@ -19,37 +20,85 @@ export default class GrainInput extends GrainTranslateMixin(GrainLitElement) {
     };
   }
 
-  get value() {
-    return this.nativeInput.value;
-  }
-
-  get name() {
-    return this.nativeInput.name;
-  }
-
   getFieldName() {
     if (this.fieldName) {
       return this.fieldName;
     }
-    if (this.nativeLabel) {
-      return this.nativeLabel.innerText;
+    if (this.$$slot.label) {
+      return this.$$slot.label.innerText;
     }
-    return this.name;
+    return this.$$slot.input.name;
+  }
+
+  elementToObject(el) {
+    let attributes = {};
+    el.getAttributeNames().forEach((attributeName) => {
+      attributes[attributeName] = el.getAttribute(attributeName);
+    });
+    attributes = Object.assign({
+      id: 'id' + Math.random().toString(36).substr(2, 10)
+    }, attributes);
+    return {
+      tagName: el.tagName.toLowerCase(),
+      attributes,
+      innerHTML: el.innerHTML
+    };
+  }
+
+  readLightDom() {
+    this.content = [];
+    this._otherIds = [];
+    for (let i = 0; i < this.children.length; i += 1) {
+      let child = this.children[i];
+      switch (child.tagName) {
+        case 'INPUT':
+          this.input = this.elementToObject(child);
+          break;
+        case 'LABEL':
+          this.label = this.elementToObject(child);
+          break;
+        default:
+          let otherObj = this.elementToObject(child);
+          this.content.push(otherObj);
+          this._otherIds.push(otherObj.attributes.id);
+      }
+    }
+  }
+
+  renderLightDom() {
+    return html`
+      <label slot="label" for$="${this.input.attributes.id}" ...=${this.label.attributes}>${this.label.innerHTML}</label>
+      <input slot="input" ...=${this.input.attributes}>
+      <p>${this.error ? this.t(this.error.translationKeys, this.error.data) : ''}</p>
+    `;
   }
 
   connectedCallback() {
+    this.readLightDom();
     super.connectedCallback();
-    this.nativeInput = this.querySelector('input');
-    this.nativeLabel = this.querySelector('label');
-    if (!this.nativeInput.hasAttribute('id')) {
-      let id = 'id' + Math.random().toString(36).substr(2, 10);
-      this.nativeInput.setAttribute('id', id);
-      this.nativeLabel.setAttribute('for', id);
-    }
+  }
+
+  afterFirstShadowDomRender() {
+    super.afterFirstShadowDomRender();
+    // this.$name.input.addEventListener('slotchange', (e) => {
+    //   console.log('fired');
+    // });
   }
 
   getErrorTranslationsKeys(data) {
     return [`errors.${data.validator}`, `global-errors:errors.${data.validator}`]
+  }
+
+  renderShadowDom() {
+    return html`
+      <div id="labelwrapper">
+        <slot name="label"></slot>
+      </div>
+      <div id="inputwrapper">
+        <slot name="input"></slot>
+      </div>
+      <slot id="slot"></slot>
+    `;
   }
 
   /**
@@ -64,7 +113,7 @@ export default class GrainInput extends GrainTranslateMixin(GrainLitElement) {
   validate() {
     let validators = this.validators;
     let errors = [];
-    let value = this.value;
+    let value = this.$$slot.input.value;
     let optional = false;
     let required = function(value) {
       return (typeof value === 'string' && value !== '') || (typeof value !== 'string' && typeof value !== 'undefined');
@@ -86,7 +135,7 @@ export default class GrainInput extends GrainTranslateMixin(GrainLitElement) {
           let data = Object.assign({}, validatorParams, {
             validator: validatorFunction.name,
             fieldName: this.getFieldName(),
-            name: this.name,
+            name: this.$$slot.input.name,
             value
           });
           errors.push({
@@ -98,20 +147,5 @@ export default class GrainInput extends GrainTranslateMixin(GrainLitElement) {
     }
     this.errors = errors;
     this.error = this.errors.length > 0 ? this.errors[0] : {};
-  }
-
-  render() {
-    return html`
-      <slot></slot>
-      <p>${this.error ? this.t(this.error.translationKeys, this.error.data) : ''}</p>
-      <ul>
-        ${this.errors.map((error) => { return html`
-          <li>
-            ${JSON.stringify(error)}<br />
-            ${this.t(error.translationKeys, error.data)}
-          </li>
-        `; })}
-      </ul>
-    `;
   }
 }
