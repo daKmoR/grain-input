@@ -67,9 +67,64 @@ export default class GrainInput extends GrainTranslateMixin(GrainLitElement) {
   renderLightDom() {
     return html`
       <label slot="label" for$="${this.input.attributes.id}" ...=${this.label.attributes}>${this.label.innerHTML}</label>
-      <input slot="input" ...=${this.input.attributes}>
+      <input slot="input"
+        on-keydown="${e => this._keyDown(e)}"
+        on-keyup="${e => this._keyUp(e)}"
+        on-blur="${e => this._onBlur(e)}"
+        on-focus="${e => this._onFocus(e)}"
+        ...=${this.input.attributes}>
       <p>${this.error ? this.t(this.error.translationKeys, this.error.data) : ''}</p>
     `;
+  }
+
+  get value() {
+    return this.$$slot.input.value;
+  }
+
+  set value(newValue) {
+    this.$$slot.input.value = newValue;
+  }
+
+  get rawValue() {
+    let rawValue = this.value.match(/[0-9\,]/g);
+    if (rawValue && rawValue.length > 0) {
+      return rawValue.join('').replace(',', '.');
+    }
+    return this.value;
+  }
+
+  get formattedValue() {
+    let rawValue = this.rawValue;
+    let formatted = new Intl.NumberFormat('de-DE').format(this.rawValue);
+    if (rawValue.substr(-1) === '.') {
+      return formatted + ',';
+    }
+    if (rawValue.indexOf('.') !== -1 && rawValue.substr(-1) === '0') {
+      return formatted + '0';
+    }
+    return formatted;
+  }
+
+  _onFocus(e) {
+    console.log('focus');
+  }
+
+  _onBlur(e) {
+    console.log('blur');
+  }
+
+  _keyDown(e) {
+    // console.log(e);
+    // e.preventDefault();
+
+    // this.value = this.formattedValue;
+  }
+
+  _keyUp(e) {
+    // console.log(e);
+    // e.preventDefault();
+
+    this.value = this.formattedValue;
   }
 
   connectedCallback() {
