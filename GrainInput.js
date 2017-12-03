@@ -1,22 +1,26 @@
 import GrainLitElement, { html } from '../grain-lit-element/GrainLitElement.js';
-import GrainTranslateMixin from '../grain-translate/GrainTranslateMixin.js';
+import GrainValidateMixin from '../grain-validate/GrainValidateMixin.js';
 
-export default class GrainInput extends GrainTranslateMixin(GrainLitElement) {
+export default class GrainInput extends GrainValidateMixin(GrainLitElement) {
 
   static get properties() {
-    return {
-      validators: {
-        type: Array
-      },
-      errors: {
-        type: Array,
-        value: []
-      },
+    return Object.assign(super.properties, {
       fieldName: {
-        type: String,
+        type: 'String',
         reflectToAttribute: 'field-name'
+      },
+      overlay: {
+        type: 'Boolean',
+        reflectToAttribute: 'overlay'
+      },
+      formattedValue: {
+        type: 'String',
+        value: ''
+      },
+      rawValue: {
+        type: 'Number'
       }
-    };
+    });
   }
 
   getFieldName() {
@@ -70,6 +74,7 @@ export default class GrainInput extends GrainTranslateMixin(GrainLitElement) {
       <input slot="input"
         on-keydown="${e => this._keyDown(e)}"
         on-keyup="${e => this._keyUp(e)}"
+        on-input="${e => this._onInput(e)}"
         on-blur="${e => this._onBlur(e)}"
         on-focus="${e => this._onFocus(e)}"
         ...=${this.input.attributes}>
@@ -78,53 +83,53 @@ export default class GrainInput extends GrainTranslateMixin(GrainLitElement) {
   }
 
   get value() {
-    return this.$$slot.input.value;
+    return this.$$slot ? this.$$slot.input.value : '';
   }
 
   set value(newValue) {
     this.$$slot.input.value = newValue;
+    this.update();
   }
 
-  get rawValue() {
-    let rawValue = this.value.match(/[0-9\,]/g);
-    if (rawValue && rawValue.length > 0) {
-      return rawValue.join('').replace(',', '.');
-    }
-    return this.value;
+  getRawValue(value) {
+    return value;
   }
 
-  get formattedValue() {
-    let rawValue = this.rawValue;
-    let formatted = new Intl.NumberFormat('de-DE').format(this.rawValue);
-    if (rawValue.substr(-1) === '.') {
-      return formatted + ',';
-    }
-    if (rawValue.indexOf('.') !== -1 && rawValue.substr(-1) === '0') {
-      return formatted + '0';
-    }
-    return formatted;
+  getFormattedValue(value) {
+    return value;
   }
 
   _onFocus(e) {
-    console.log('focus');
+    this.value = this.formattedValue;
+    this.overlay = false;
+    console.log('focus', this.value);
   }
 
   _onBlur(e) {
-    console.log('blur');
+    this.overlayValue = this.formattedValue;
+    this.overlay = true;
+    this.value = this.rawValue;
+    console.log('blur', this.value);
+  }
+
+  _onInput(e) {
+    this.rawValue = this.getRawValue(this.value);
+    this.formattedValue = this.getFormattedValue(this.rawValue);
+    this.value = this.formattedValue;
   }
 
   _keyDown(e) {
     // console.log(e);
-    // e.preventDefault();
-
     // this.value = this.formattedValue;
+    // this.overlay = true;
   }
 
   _keyUp(e) {
     // console.log(e);
     // e.preventDefault();
 
-    this.value = this.formattedValue;
+    // this.value = this.formattedValue;
+    // this.overlay = false;
   }
 
   connectedCallback() {
@@ -139,67 +144,37 @@ export default class GrainInput extends GrainTranslateMixin(GrainLitElement) {
     // });
   }
 
-  getErrorTranslationsKeys(data) {
-    return [`errors.${data.validator}`, `global-errors:errors.${data.validator}`]
-  }
-
   renderShadowDom() {
     return html`
+      <style>
+        #overlay {
+          color: transparent;
+        }
+        :host([overlay]) #overlay {
+          color: inherit;
+        }
+        :host([overlay]) #inputwrapper ::slotted(input) {
+          color: transparent;
+        }
+        #inputwrapper {
+          position: relative;
+        }
+        #overlay {
+          position: absolute;
+          pointer-events: none;
+          border-color: transparent;
+          background: transparent;
+        }
+      </style>
       <div id="labelwrapper">
         <slot name="label"></slot>
       </div>
       <div id="inputwrapper">
+        <input id="overlay" value="${this.formattedValue}" tabindex="-1" aria-hidden="true" />
         <slot name="input"></slot>
       </div>
       <slot id="slot"></slot>
     `;
   }
 
-  /**
-   * a Validator can be
-   * - special
-   *     e.g. 'required', 'optional'
-   * - function
-   *     e.g. required, isEmail, isEmpty
-   * - array
-   *     e.g. [isLength, {min: 10}], [isLength, {min: 5, max: 10}], [contains, 'me']
-   */
-  validate() {
-    let validators = this.validators;
-    let errors = [];
-    let value = this.$$slot.input.value;
-    let optional = false;
-    let required = function(value) {
-      return (typeof value === 'string' && value !== '') || (typeof value !== 'string' && typeof value !== 'undefined');
-    }
-    
-    for (let i=0; i < validators.length; i++) {
-      if (typeof validators[i] === 'string') {
-        optional = validators[i] === 'optional';
-        if (validators[i] === 'required') {
-          validators[i] = required;
-        }
-      }
-      let validatorArray = Array.isArray(validators[i]) ? validators[i] : [validators[i]];
-      let validatorFunction = validatorArray[0];
-      let validatorParams = validatorArray[1];
-
-      if (typeof validatorFunction === 'function') {
-        if (!validatorFunction(value, validatorParams) && !(optional === true && typeof value === 'string' && value === '')) {
-          let data = Object.assign({}, validatorParams, {
-            validator: validatorFunction.name,
-            fieldName: this.getFieldName(),
-            name: this.$$slot.input.name,
-            value
-          });
-          errors.push({
-            data,
-            translationKeys: this.getErrorTranslationsKeys(data)
-          });
-        }
-      }
-    }
-    this.errors = errors;
-    this.error = this.errors.length > 0 ? this.errors[0] : {};
-  }
 }

@@ -27,12 +27,12 @@
     });
 
     render(html`
-      <grain-input field-name="First Name" validators=${['optional', [validator.isLength, {min: 5, max: 10}]]}>
+      <grain-input field-name="First Name" errorValidators=${['optional', [validator.isLength, {min: 5, max: 10}]]}>
         <label>First Name</label>
         <input type="text" name="first-name" />
         <p>(option, isLength 5-10)</p>
       </grain-input>
-      <grain-input validators=${['required', [validator.isLength, {min: 5, max: 10}]]}>
+      <grain-input errorValidators=${['required', [validator.isLength, {min: 5, max: 10}]]}>
         <label>Last Name</label>
         <input type="text" name="last-name" />
         <p>(required, isLength 5-10)</p>
