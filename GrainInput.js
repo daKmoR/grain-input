@@ -110,12 +110,14 @@ export default class GrainInput extends GrainValidateMixin(GrainLitElement) {
     this.overlay = true;
     this.value = this.rawValue;
     console.log('blur', this.value);
+    super._onBlur();
   }
 
   _onInput(e) {
     this.rawValue = this.getRawValue(this.value);
     this.formattedValue = this.getFormattedValue(this.rawValue);
     this.value = this.formattedValue;
+    super._onInput();
   }
 
   _keyDown(e) {
@@ -135,6 +137,12 @@ export default class GrainInput extends GrainValidateMixin(GrainLitElement) {
   connectedCallback() {
     this.readLightDom();
     super.connectedCallback();
+  }
+
+  afterFirstLightDomRender() {
+    super.afterFirstLightDomRender();
+    this.rawValue = this.getRawValue(this.value);
+    this.formattedValue = this.getFormattedValue(this.rawValue);
   }
 
   afterFirstShadowDomRender() {
