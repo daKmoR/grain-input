@@ -15,11 +15,13 @@ export default class GrainInput extends GrainValidateMixin(GrainLitElement) {
       },
       formattedValue: {
         type: 'String',
-        value: ''
       },
       rawValue: {
-        type: 'Number'
-      }
+        type: 'String',
+      },
+      jsValue: {
+        type: 'String',
+      },
     });
   }
 
@@ -36,10 +38,10 @@ export default class GrainInput extends GrainValidateMixin(GrainLitElement) {
   elementToObject(el) {
     let attributes = {};
     el.getAttributeNames().forEach((attributeName) => {
-      attributes[attributeName] = el.getAttribute(attributeName);
+      attributes[attributeName + '$'] = el.getAttribute(attributeName);
     });
     attributes = Object.assign({
-      id: 'id' + Math.random().toString(36).substr(2, 10)
+      'id$': 'id' + Math.random().toString(36).substr(2, 10)
     }, attributes);
     return {
       tagName: el.tagName.toLowerCase(),
@@ -95,8 +97,18 @@ export default class GrainInput extends GrainValidateMixin(GrainLitElement) {
     return value;
   }
 
+  getJsValue(value) {
+    return value;
+  }
+
   getFormattedValue(value) {
     return value;
+  }
+
+  calculateValues() {
+    this.jsValue = this.getJsValue(this.value);
+    this.rawValue = this.getRawValue(this.jsValue);
+    this.formattedValue = this.getFormattedValue(this.jsValue);
   }
 
   _onFocus(e) {
@@ -114,8 +126,7 @@ export default class GrainInput extends GrainValidateMixin(GrainLitElement) {
   }
 
   _onInput(e) {
-    this.rawValue = this.getRawValue(this.value);
-    this.formattedValue = this.getFormattedValue(this.rawValue);
+    this.calculateValues();
     this.value = this.formattedValue;
     super._onInput();
   }
@@ -141,8 +152,7 @@ export default class GrainInput extends GrainValidateMixin(GrainLitElement) {
 
   afterFirstLightDomRender() {
     super.afterFirstLightDomRender();
-    this.rawValue = this.getRawValue(this.value);
-    this.formattedValue = this.getFormattedValue(this.rawValue);
+    this.calculateValues();
   }
 
   afterFirstShadowDomRender() {
