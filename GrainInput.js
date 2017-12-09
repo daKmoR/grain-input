@@ -105,10 +105,14 @@ export default class GrainInput extends GrainValidateMixin(GrainLitElement) {
     return value;
   }
 
-  calculateValues() {
-    this.jsValue = this.getJsValue(this.value);
-    this.rawValue = this.getRawValue(this.jsValue);
-    this.formattedValue = this.getFormattedValue(this.jsValue);
+  _guessFormat() {}
+
+  calculateValues(value) {
+    let startValue = value ? value : this.value;
+    this.rawValue = this.getRawValue(startValue);
+    this.jsValue = this.getJsValue(this.rawValue);
+    this._guessFormat();
+    this.formattedValue = this.getFormattedValue(this.jsValue, this.rawValue);
   }
 
   _onFocus(e) {
