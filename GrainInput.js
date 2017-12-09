@@ -1,5 +1,6 @@
 import GrainLitElement, { html } from '../grain-lit-element/GrainLitElement.js';
 import GrainValidateMixin from '../grain-validate/GrainValidateMixin.js';
+import { unsafeHTML } from '../lit-html/lib/unsafe-html.js';
 
 export default class GrainInput extends GrainValidateMixin(GrainLitElement) {
 
@@ -25,6 +26,11 @@ export default class GrainInput extends GrainValidateMixin(GrainLitElement) {
     });
   }
 
+  constructor() {
+    super();
+    this.inputId = 'id' + Math.random().toString(36).substr(2, 10);
+  }
+
   getFieldName() {
     if (this.fieldName) {
       return this.fieldName;
@@ -35,19 +41,28 @@ export default class GrainInput extends GrainValidateMixin(GrainLitElement) {
     return this.$$slot.input.name;
   }
 
-  elementToObject(el) {
+  elementToObject(el, i) {
     let attributes = {};
     el.getAttributeNames().forEach((attributeName) => {
       attributes[attributeName + '$'] = el.getAttribute(attributeName);
     });
     attributes = Object.assign({
-      'id$': 'id' + Math.random().toString(36).substr(2, 10)
+      'id$': `${this.inputId}-${i}`
     }, attributes);
     return {
       tagName: el.tagName.toLowerCase(),
       attributes,
       innerHTML: el.innerHTML
     };
+  }
+
+  objectElementToString(obj) {
+    let attributesString = '';
+    Object.keys(obj.attributes).forEach((attribute) => {
+      const value = obj.attributes[attribute];
+      attributesString += ' ' + attribute.slice(0, -1) + '="' + value + '"';
+    });
+    return `<${obj.tagName}${attributesString}>${obj.innerHTML}</${obj.tagName}>`;
   }
 
   readLightDom() {
@@ -57,22 +72,27 @@ export default class GrainInput extends GrainValidateMixin(GrainLitElement) {
       let child = this.children[i];
       switch (child.tagName) {
         case 'INPUT':
-          this.input = this.elementToObject(child);
+          this.input = this.elementToObject(child, i);
+          this.input.attributes.id$ = this.inputId;
           break;
         case 'LABEL':
-          this.label = this.elementToObject(child);
+          this.label = this.elementToObject(child, i);
           break;
         default:
-          let otherObj = this.elementToObject(child);
+          let otherObj = this.elementToObject(child, i);
           this.content.push(otherObj);
-          this._otherIds.push(otherObj.attributes.id);
+          this._otherIds.push(otherObj.attributes.id$);
       }
     }
+    this.contentString = '';
+    this.content.forEach((obj) => {
+      this.contentString += this.objectElementToString(obj);
+    });
   }
 
   renderLightDom() {
     return html`
-      <label slot="label" for$="${this.input.attributes.id}" ...=${this.label.attributes}>${this.label.innerHTML}</label>
+      <label slot="label" for$="${this.input.attributes.id$}" ...=${this.label.attributes}>${this.label.innerHTML}</label>
       <input slot="input"
         on-keydown="${e => this._keyDown(e)}"
         on-keyup="${e => this._keyUp(e)}"
@@ -80,6 +100,7 @@ export default class GrainInput extends GrainValidateMixin(GrainLitElement) {
         on-blur="${e => this._onBlur(e)}"
         on-focus="${e => this._onFocus(e)}"
         ...=${this.input.attributes}>
+      ${unsafeHTML(this.contentString)}
       <p>${this.error ? this.t(this.error.translationKeys, this.error.data) : ''}</p>
     `;
   }
