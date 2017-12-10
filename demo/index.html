@@ -5,7 +5,6 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
   <title>grain-input Demo</title>
-  <script type="text/javascript" src="../../validator/validator.min.js"></script>
 
   <custom-style>
     <style include="demo-pages-shared-styles"></style>
@@ -26,17 +25,38 @@
       namespace: 'translations'
     });
 
+    window.randomOk = function randomOk() {
+      return false;
+    }
+    window.isLength = function isLength(jsValue, { min = 0, max = 0 }) {
+      return jsValue.length > min && jsValue.length < max;
+    }
+    window.minLength = function minLength(jsValue, { min = 0 }) {
+      return jsValue.length > min;
+    }
+
+    // <grain-input field-name="First Name" errorValidators=${['optional', [isLength, {min: 5, max: 10}]]}>
+    //     <label>First Name</label>
+    //     <input type="text" name="first-name" />
+    //     <p>(option, isLength 5-10)</p>
+    //   </grain-input>
+    //   <grain-input errorValidators=${['required', [isLength, {min: 5, max: 10}]]}>
+    //     <label>Last Name</label>
+    //     <input type="text" name="last-name" />
+    //     <p>(required, isLength 5-10)</p>
+    //   </grain-input>
+
     render(html`
-      <grain-input field-name="First Name" errorValidators=${['optional', [validator.isLength, {min: 5, max: 10}]]}>
-        <label>First Name</label>
-        <input type="text" name="first-name" />
-        <p>(option, isLength 5-10)</p>
-      </grain-input>
-      <grain-input errorValidators=${['required', [validator.isLength, {min: 5, max: 10}]]}>
-        <label>Last Name</label>
-        <input type="text" name="last-name" />
+      <grain-input
+        errorValidators=${[[isLength, {min: 5, max: 10}]]}
+        warningValidators=${[[minLength, {min: 7}]]}
+        okValidators=${[randomOk]}
+      >
+        <label>Name</label>
+        <input type="text" name="last-name" value="abcdef" />
         <p>(required, isLength 5-10)</p>
       </grain-input>
+
       <button on-click="${(e) => { document.querySelectorAll('grain-input').forEach(el => el.validate()); }}">validate</button>
     `, document.getElementById('container'));
   </script>

@@ -10,9 +10,7 @@
     "grain-lit-element": "github:daKmoR/grain-lit-element",
     "grain-validate": "github:daKmoR/grain-validate"
   },
-  "devDependencies": {
-    "validator": "^9.1.1"
-  },
+  "devDependencies": {},
   "scripts": {
     "start": "polymer serve",
     "test": "polymer test --skip-selenium-install",

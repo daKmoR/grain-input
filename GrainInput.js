@@ -3,6 +3,11 @@ import GrainValidateMixin from '../grain-validate/GrainValidateMixin.js';
 import { unsafeHTML } from '../lit-html/lib/unsafe-html.js';
 
 export default class GrainInput extends GrainValidateMixin(GrainLitElement) {
+  static get translateDefaults() {
+    return {
+      loadNamespaces: ['grain-validate']
+    };
+  }
 
   static get properties() {
     return Object.assign(super.properties, {
@@ -101,7 +106,7 @@ export default class GrainInput extends GrainValidateMixin(GrainLitElement) {
         on-focus="${e => this._onFocus(e)}"
         ...=${this.input.attributes}>
       ${unsafeHTML(this.contentString)}
-      <p>${this.error ? this.t(this.error.translationKeys, this.error.data) : ''}</p>
+      <p>${this.validationMessage ? this.t(this.validationMessage.translationKeys, this.validationMessage.data) : ''}</p>
     `;
   }
 
