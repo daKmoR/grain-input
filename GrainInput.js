@@ -34,6 +34,7 @@ export default class GrainInput extends GrainValidateMixin(GrainLitElement) {
   constructor() {
     super();
     this.inputId = 'id' + Math.random().toString(36).substr(2, 10);
+    this.validationMessageId = `${this.inputId}-validation-message`;
   }
 
   getFieldName() {
@@ -104,9 +105,14 @@ export default class GrainInput extends GrainValidateMixin(GrainLitElement) {
         on-input="${e => this._onInput(e)}"
         on-blur="${e => this._onBlur(e)}"
         on-focus="${e => this._onFocus(e)}"
+        aria-describedby$="${this._otherIds.join(' ') + ' ' + this.validationMessageId}"
         ...=${this.input.attributes}>
+
       ${unsafeHTML(this.contentString)}
-      <p>${this.validationMessage ? this.t(this.validationMessage.translationKeys, this.validationMessage.data) : ''}</p>
+
+      <div id$="${this.validationMessageId}">
+        ${this.validationMessage ? this.t(this.validationMessage.translationKeys, this.validationMessage.data) : ''}
+      </div>
     `;
   }
 
